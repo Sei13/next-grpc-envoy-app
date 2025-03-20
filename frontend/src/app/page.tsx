@@ -1,24 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { grpcClient, UserService, GetUserRequest, GetUserResponse } from '@/utils/grpc';
+import useSWR from 'swr';
+import { getUser } from '@/utils/grpc';
+import { User } from '@/proto/user_pb';
 
 export default function Home() {
   const [userId, setUserId] = useState('');
-  const [user, setUser] = useState<GetUserResponse['user'] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data: user, error, isLoading, mutate } = useSWR<User.AsObject>(
+    userId ? `user/${userId}` : null,
+    () => getUser(userId)
+  );
 
   const handleGetUser = async () => {
-    try {
-      setError(null);
-      const request: GetUserRequest = { id: userId };
-      const response = await grpcClient.rpcCall<GetUserRequest, GetUserResponse>(
-        'user.UserService/GetUser',
-        request
-      );
-      setUser(response.user);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+    if (userId) {
+      await mutate();
     }
   };
 
@@ -43,14 +39,15 @@ export default function Home() {
 
           <button
             onClick={handleGetUser}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+            disabled={isLoading}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Get User
+            {isLoading ? 'Loading...' : 'Get User'}
           </button>
 
           {error && (
             <div className="text-red-600">
-              Error: {error}
+              Error: {error.message}
             </div>
           )}
 

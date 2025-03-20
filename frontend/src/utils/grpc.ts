@@ -1,5 +1,5 @@
 import { UserServiceClient } from '../proto/UserServiceClientPb';
-import { GetUserRequest } from '../proto/user_pb';
+import { GetUserRequest, GetUserResponse, User } from '../proto/user_pb';
 
 // ユーザーサービスクライアントのインスタンス化
 const userService = new UserServiceClient('http://localhost:8080', null, {
@@ -7,24 +7,25 @@ const userService = new UserServiceClient('http://localhost:8080', null, {
 });
 
 // ユーザー情報を取得する関数
-export async function getUser(id: string) {
+export async function getUser(id: string): Promise<User.AsObject> {
   const request = new GetUserRequest();
   request.setId(id);
-  return await userService.getUser(request);
+  const response = await userService.getUser(request);
+  const user = response.getUser();
+  if (!user) {
+    throw new Error('User not found');
+  }
+  return {
+    id: user.getId(),
+    name: user.getName(),
+    email: user.getEmail()
+  };
 }
 
 // ユーザーサービスの型定義
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
-export interface GetUserResponse {
-  user: User;
-}
+export type { User } from '../proto/user_pb';
 
 // ユーザーサービスのインターフェース
 export interface UserService {
-  getUser(request: GetUserRequest): Promise<GetUserResponse>;
+  getUser(request: GetUserRequest): Promise<User.AsObject>;
 } 

@@ -1,5 +1,8 @@
+'use client';
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SWRConfig } from 'swr';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,7 +30,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <SWRConfig
+          value={{
+            revalidateOnFocus: false,
+            shouldRetryOnError: false,
+          }}
+        >
+          {children}
+        </SWRConfig>
       </body>
     </html>
   );
